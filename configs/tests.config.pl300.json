@@ -9,6 +9,8 @@
     { "name": "SQL Server running",   "script": "Test-SqlServerRunning.ps1",        "enabled": true },
     { "name": "AdventureWorksDW2020 database", "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "AdventureWorksDW2020" } },
     { "name": "TailspinToys2020-US database",  "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "TailspinToys2020-US" } },
+    { "name": "GoToMyPC running",    "script": "Test-GoToMyPCRunning.ps1",         "enabled": true },
+    { "name": "GoToMyPC single instance", "script": "Test-GoToMyPCSingleInstance.ps1", "enabled": true },
     { "name": "Allfiles Directory",    "script": "Test-FilesPresent.ps1", "arguments": { "Path": "D:\\Allfiles", "ExpectedFiles": ["Allfiles-Nov25-Version.txt"] } },
     { "name": "01-get-data Directory", "script": "Test-FilesPresent.ps1", "arguments": { "Path": "C:\\Users\\Student\\Downloads\\01-get-data", "ExpectedFiles": ["01-Starter-Sales Analysis.pbix"] } }
   ]
