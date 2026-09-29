@@ -5,6 +5,7 @@
     { "name": "Power BI Desktop",     "script": "Test-PowerBIDesktopInstalled.ps1", "enabled": true },
     { "name": "SQL Server installed", "script": "Test-SqlServerInstalled.ps1",      "enabled": true },
     { "name": "SSMS",                 "script": "Test-SSMSInstalled.ps1",           "enabled": true },
+    { "name": "Excel",               "script": "Test-ExcelInstalled.ps1",          "enabled": true },
     { "name": "VS Code",              "script": "Test-VSCodeInstalled.ps1",         "enabled": true },
     { "name": "SQL Server running",   "script": "Test-SqlServerRunning.ps1",        "enabled": true },
     { "name": "pub1 database",        "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "pub1" } },
