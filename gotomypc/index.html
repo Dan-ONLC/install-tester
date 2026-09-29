@@ -23,7 +23,7 @@
   th { color:var(--muted); font-weight:600; }
   td.host { font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; }
   .s { font-weight:600; white-space:nowrap; }
-  .s.ok { color:var(--ok); } .s.bad { color:var(--bad); } .s.run { color:var(--muted); }
+  .s.ok { color:var(--ok); } .s.bad { color:var(--bad); } .s.warn { color:var(--warn); } .s.run { color:var(--muted); }
   .note { color:var(--muted); font-size:.82rem; }
   button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; margin-right:8px; }
   button.primary { background:#0a6cff; border-color:#0a6cff; color:#fff; }
@@ -48,6 +48,12 @@
     </table>
   </div>
 
+  <div class="card note">
+    <strong>Not testable from a web page:</strong> UDP 8200, 1853, 3489 and 15000, and TCP 8200 (needed only if your policy lists explicit ports/IPs). Inbound connections are not required.
+    Wildcard domains are checked using representative hostnames; a warning may mean that hostname does not exist rather than that it is blocked.
+    SSL/TLS inspection and proxies can degrade sessions even when these checks pass.
+  </div>
+
   <div class="card">
     <button class="primary" id="rerun">Run again</button>
     <button id="copy">Copy results</button>
@@ -58,32 +64,42 @@
 
 <script>
 /*
- * ENDPOINTS: edit this list to match the firewall KB article:
+ * ENDPOINTS - derived from the GoToMyPC firewall article (updated 4 Feb 2026):
  * https://support.gotomypc.com/help/what-are-the-optimal-firewall-configurations
- * Browsers cannot test wildcard domains or non-web ports, so each wildcard
- * is represented by one or more concrete hostnames.
- *   required: false  => failure is reported as a warning, not a failure.
- *   scheme:   "https" (default, port 443) or "http" (port 80).
+ * Browsers cannot test wildcards, so each wildcard domain is represented by one or
+ * more concrete hostnames ("hosts"); the entry passes if ANY of them is reachable.
+ *   required: true  => failure = FAIL. Only used for hostnames that certainly exist
+ *                      (named in the article, or the product's own public sites).
+ *   required: false => failure = warning (representative hostname may simply not exist).
+ *   port: 443 (default, HTTPS) or 80 (HTTP).
  */
 const ENDPOINTS = [
-  { host: "www.gotomypc.com",            purpose: "GoToMyPC website (*.gotomypc.com)", required: true },
-  { host: "app.gotomypc.com",            purpose: "GoToMyPC web app / viewer (*.gotomypc.com)", required: true },
-  { host: "static.gotomypc.com",         purpose: "Static assets (*.gotomypc.com)", required: false },
-  { host: "www.goto.com",                purpose: "GoTo services (*.goto.com)", required: true },
-  { host: "authentication.logmeininc.com", purpose: "Sign-in / authentication (*.logmeininc.com)", required: true },
-  { host: "secure.logmein.com",          purpose: "Account services (*.logmein.com)", required: true },
-  { host: "www.logmeininc.com",          purpose: "LogMeIn services (*.logmeininc.com)", required: false },
-  { host: "api.getgo.com",               purpose: "GoTo API (*.getgo.com)", required: false },
-  { host: "www.gotomypc.com", scheme: "http", purpose: "HTTP port 80 fallback", required: false },
+  { wildcard: "*.gotomypc.com",   hosts: ["www.gotomypc.com", "support.gotomypc.com"], required: true,  purpose: "GoToMyPC product domain" },
+  { wildcard: "turn-media.gotoresolve.com", hosts: ["turn-media.gotoresolve.com"], required: true, purpose: "Media relay (TCP 443)" },
+  { wildcard: "*.gotoresolve.com", hosts: ["turn.gotoresolve.com", "www.gotoresolve.com"], required: false, purpose: "Relay / session services (TCP 443)" },
+  { wildcard: "api.filepicker.io", hosts: ["api.filepicker.io"], required: true, purpose: "File transfer helper" },
+  { wildcard: "*.filestackapi.com", hosts: ["www.filestackapi.com", "cdn.filestackcontent.com"], required: false, purpose: "File transfer helper" },
+  { wildcard: "*.getgo.com",      hosts: ["api.getgo.com", "www.getgo.com"], required: false, purpose: "Shared GoTo product domain" },
+  { wildcard: "*.expertcity.com", hosts: ["www.expertcity.com", "api.expertcity.com"], required: false, purpose: "Shared GoTo product domain" },
+  { wildcard: "*.getgocdn.com",   hosts: ["www.getgocdn.com", "static.getgocdn.com"], required: false, purpose: "GoTo CDN" },
+  { wildcard: "*.getgoservices.com", hosts: ["www.getgoservices.com", "api.getgoservices.com"], required: false, purpose: "Shared GoTo product domain" },
+  { wildcard: "*.getgoservices.net", hosts: ["www.getgoservices.net", "api.getgoservices.net"], required: false, purpose: "Shared GoTo product domain" },
+  { wildcard: "*.goto-rtc.com",   hosts: ["www.goto-rtc.com", "api.goto-rtc.com"], required: false, purpose: "Real-time communication" },
+  { wildcard: "*.accounts.logme.in", hosts: ["login.accounts.logme.in", "authentication.accounts.logme.in"], required: false, purpose: "Sign-in / accounts" },
+  { wildcard: "*.internap.net",   hosts: ["www.internap.net", "download.internap.net"], required: false, purpose: "Software updates" },
+  { wildcard: "*.internapcdn.net", hosts: ["www.internapcdn.net", "download.internapcdn.net"], required: false, purpose: "Software updates" },
+  { wildcard: "*.measurement-lab.org", hosts: ["www.measurement-lab.org", "speed.measurementlab.net"], required: false, purpose: "Session diagnostics" },
+  { wildcard: "*.cloudfront.net", hosts: ["www.cloudfront.net"], required: false, purpose: "Third-party CDN" },
+  { wildcard: "TCP 80 (in-session)", hosts: ["www.gotomypc.com"], port: 80, required: false, purpose: "Recommended for in-session communication" },
 ];
 const TIMEOUT_MS = 8000;
 
 const $ = id => document.getElementById(id);
 let results = [];
 
-async function probe(ep) {
-  const scheme = ep.scheme || "https";
-  const url = `${scheme}://${ep.host}/?_=${Date.now()}${Math.random().toString(36).slice(2)}`;
+async function probeHost(host, port) {
+  const scheme = port === 80 ? "http" : "https";
+  const url = `${scheme}://${host}/?_=${Date.now()}${Math.random().toString(36).slice(2)}`;
   const t0 = performance.now();
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
@@ -97,6 +113,17 @@ async function probe(ep) {
   } finally { clearTimeout(timer); }
 }
 
+async function probe(ep) {
+  const rs = await Promise.all(ep.hosts.map(h => probeHost(h, ep.port)));
+  const hit = rs.find(r => r.ok);
+  if (hit) return hit;
+  return { ok: false, ms: Math.max(...rs.map(r => r.ms)), err: rs[0].err };
+}
+
+function label(ep) {
+  return `${ep.port === 80 ? "TCP 80: " : ""}${ep.wildcard}` + (ep.required ? "" : " (recommended)");
+}
+
 function render() {
   $("rows").innerHTML = "";
   ENDPOINTS.forEach((ep, i) => {
@@ -105,11 +132,10 @@ function render() {
     let st, cls;
     if (!r) { st = "Testing…"; cls = "run"; }
     else if (r.ok) { st = `✔ OK (${r.ms} ms)`; cls = "ok"; }
-    else { st = (ep.required === false ? "⚠ " : "✘ ") + r.err; cls = "bad"; }
-    const label = `${ep.scheme || "https"}://${ep.host}` + (ep.required === false ? " (optional)" : "");
+    else { st = (ep.required ? "✘ " : "⚠ ") + r.err; cls = ep.required ? "bad" : "warn"; }
     tr.innerHTML = `<td class="s ${cls}"></td><td class="host"></td><td></td>`;
     tr.children[0].textContent = st;
-    tr.children[1].textContent = label;
+    tr.children[1].textContent = label(ep);
     tr.children[2].textContent = ep.purpose;
     $("rows").appendChild(tr);
   });
@@ -120,17 +146,17 @@ function summarize(done) {
   const finished = results.filter(Boolean).length;
   $("prog").value = finished / ENDPOINTS.length;
   if (!done) return;
-  const reqFail = ENDPOINTS.filter((ep, i) => ep.required !== false && !results[i].ok);
-  const optFail = ENDPOINTS.filter((ep, i) => ep.required === false && !results[i].ok);
+  const reqFail = ENDPOINTS.filter((ep, i) => ep.required && !results[i].ok);
+  const optFail = ENDPOINTS.filter((ep, i) => !ep.required && !results[i].ok);
   if (!reqFail.length && !optFail.length) {
     b.className = "ok"; b.textContent = "✔ All checks passed. Your network can reach GoToMyPC.";
     $("detail").textContent = "";
   } else if (!reqFail.length) {
-    b.className = "warn"; b.textContent = "⚠ Passed, with warnings on optional endpoints.";
-    $("detail").textContent = "Optional: " + optFail.map(e => e.host).join(", ");
+    b.className = "warn"; b.textContent = "⚠ Required endpoints reachable; some recommended ones were not.";
+    $("detail").textContent = "Recommended: " + optFail.map(e => e.wildcard).join(", ");
   } else {
     b.className = "bad"; b.textContent = `✘ ${reqFail.length} required endpoint(s) could not be reached. GoToMyPC may not work on this network.`;
-    $("detail").textContent = "Blocked: " + reqFail.map(e => e.host).join(", ");
+    $("detail").textContent = "Blocked: " + reqFail.map(e => e.wildcard).join(", ");
   }
 }
 
@@ -138,7 +164,7 @@ function report() {
   const lines = [`GoToMyPC connectivity check - ${new Date().toISOString()}`, $("banner").textContent, ""];
   ENDPOINTS.forEach((ep, i) => {
     const r = results[i];
-    lines.push(`${r && r.ok ? "PASS" : "FAIL"}  ${ep.scheme || "https"}://${ep.host}${ep.required === false ? " (optional)" : ""}  ${r ? (r.ok ? r.ms + " ms" : r.err) : "not run"}`);
+    lines.push(`${r && r.ok ? "PASS" : ep.required ? "FAIL" : "WARN"}  ${label(ep)}  [${ep.hosts.join(", ")}]  ${r ? (r.ok ? r.ms + " ms" : r.err) : "not run"}`);
   });
   lines.push("", `Browser: ${navigator.userAgent}`, `Online flag: ${navigator.onLine}`);
   return lines.join("\n");
