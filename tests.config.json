@@ -11,6 +11,8 @@
     { "name": "pub1 database",        "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "pub1" } },
     { "name": "pub2 database",        "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "pub2" } },
     { "name": "AdventureWorksDW2020 database", "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "AdventureWorksDW2020" } },
+    { "name": "GoToMyPC running",    "script": "Test-GoToMyPCRunning.ps1",         "enabled": true },
+    { "name": "GoToMyPC single instance", "script": "Test-GoToMyPCSingleInstance.ps1", "enabled": true },
     { "name": "Course files",         "script": "Test-FilesPresent.ps1",
       "arguments": { "Path": "C:\\CourseFiles", "ExpectedFiles": ["Data\\sample.csv", "Labs\\lab1.docx"] } }
   ]
