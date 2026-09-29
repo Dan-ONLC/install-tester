@@ -1,0 +1,16 @@
+{
+  "testsDirectory": "Tests",
+  "logPath": "logs/install-tests.log",
+  "tests": [
+    { "name": "Power BI Desktop",     "script": "Test-PowerBIDesktopInstalled.ps1", "enabled": true },
+    { "name": "SQL Server installed", "script": "Test-SqlServerInstalled.ps1",      "enabled": true },
+    { "name": "SSMS",                 "script": "Test-SSMSInstalled.ps1",           "enabled": true },
+    { "name": "VS Code",              "script": "Test-VSCodeInstalled.ps1",         "enabled": true },
+    { "name": "SQL Server running",   "script": "Test-SqlServerRunning.ps1",        "enabled": true },
+    { "name": "pub1 database",        "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "pub1" } },
+    { "name": "pub2 database",        "script": "Test-SqlDatabaseExists.ps1", "arguments": { "DatabaseName": "pub2" } },
+    { "name": "094018Data",         "script": "Test-FilesPresent.ps1", "arguments": { "Path": "C:\\094018Data" } },
+    { "name": "094029DATA",         "script": "Test-FilesPresent.ps1", "arguments": { "Path": "C:\\094029DATA" } },
+    { "name": "094030Data",         "script": "Test-FilesPresent.ps1", "arguments": { "Path": "C:\\094030Data" } }
+  ]
+}
