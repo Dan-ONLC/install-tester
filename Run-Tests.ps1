@@ -10,14 +10,53 @@ param([string]$ConfigPath = (Join-Path $PSScriptRoot 'tests.config.json'))
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Tests\TestCommon.ps1')
 
+$versionFile = Join-Path $PSScriptRoot 'VERSION'
+$version = if (Test-Path -LiteralPath $versionFile) { (Get-Content -LiteralPath $versionFile -Raw).Trim() } else { 'unknown' }
+$global:TesterVersion = $version
+
+function Show-Banner {
+    param([string]$Version)
+    $title = 'ONLC Machine Configuration Tester'
+    $sub   = "Version $Version"
+    $width = 54
+    $h = [string][char]0x2550; $v = [string][char]0x2551
+    $tl = [string][char]0x2554; $tr = [string][char]0x2557; $bl = [string][char]0x255A; $br = [string][char]0x255D
+    $rainbow = 'Red','Yellow','Green','Cyan','Blue','Magenta'
+    $center = { param($t) $l = [int][math]::Floor(($width - $t.Length) / 2); (' ' * $l) + $t + (' ' * ($width - $t.Length - $l)) }
+
+    Write-Host ''
+    Write-Host ($tl + ($h * $width) + $tr) -ForegroundColor Cyan
+    Write-Host $v -ForegroundColor Cyan -NoNewline
+    Write-Host (& $center '') -NoNewline
+    Write-Host $v -ForegroundColor Cyan
+    Write-Host $v -ForegroundColor Cyan -NoNewline
+    # Title: one color per character, cycling through the rainbow.
+    $padded = & $center $title
+    $i = 0
+    foreach ($ch in $padded.ToCharArray()) {
+        if ($ch -eq ' ') { Write-Host ' ' -NoNewline }
+        else { Write-Host $ch -ForegroundColor $rainbow[$i % $rainbow.Count] -NoNewline; $i++ }
+    }
+    Write-Host $v -ForegroundColor Cyan
+    Write-Host $v -ForegroundColor Cyan -NoNewline
+    Write-Host (& $center $sub) -ForegroundColor Yellow -NoNewline
+    Write-Host $v -ForegroundColor Cyan
+    Write-Host $v -ForegroundColor Cyan -NoNewline
+    Write-Host (& $center '') -NoNewline
+    Write-Host $v -ForegroundColor Cyan
+    Write-Host ($bl + ($h * $width) + $br) -ForegroundColor Cyan
+}
+
+Show-Banner -Version $version
+
 $config   = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
 $testsDir = if ($config.testsDirectory) { $config.testsDirectory } else { 'Tests' }
 if (-not [System.IO.Path]::IsPathRooted($testsDir)) { $testsDir = Join-Path $PSScriptRoot $testsDir }
 $logPath  = if ($config.logPath) { $config.logPath } else { Get-DefaultLogPath }
 if (-not [System.IO.Path]::IsPathRooted($logPath)) { $logPath = Join-Path $PSScriptRoot $logPath }
 
-Write-Host "`nRunning install tests (config: $ConfigPath)" -ForegroundColor Cyan
-Write-LogLine -LogPath $logPath -Message "===== RUN START (config: $ConfigPath) ====="
+Write-Host "Running install tests (config: $ConfigPath)" -ForegroundColor Cyan
+Write-LogLine -LogPath $logPath -Message "===== RUN START (ONLC Machine Configuration Tester v$version; config: $ConfigPath) ====="
 
 $results = @()
 foreach ($t in $config.tests) {
