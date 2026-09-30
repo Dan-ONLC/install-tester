@@ -12,4 +12,5 @@ Modular PowerShell checks for a Windows machine (works in Windows PowerShell 5.1
 
 Config: each entry has `script`, optional `name`, `enabled` (default true) and `arguments` (object passed as named
 parameters). New tests = drop a script in `Tests/` that dot-sources `TestCommon.ps1` and ends with `Complete-Test`, then list it in the config.
-The SQL tests use Windows authentication against `.` unless `ServerInstance` is given in `arguments`.
+The SQL tests use Windows authentication against `.` unless `ServerInstance` is given in `arguments`. See the sample file, `tests-config.json` 
+for reference.
