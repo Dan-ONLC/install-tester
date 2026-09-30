@@ -1,11 +1,15 @@
 <#
 .SYNOPSIS  Parent runner: runs the test scripts listed in a JSON config and reports overall results.
 .PARAMETER ConfigPath  JSON config file (default: tests.config.json next to this script).
+.PARAMETER NoPause     Skip the final "Press any key to continue" prompt (for unattended/scheduled runs).
 .NOTES
   Sets $global:OverallResult to 'AllPassed', 'SomeFailed' or 'AllFailed' (and 'NoTests' if none ran).
   Also returns that string on the pipeline and exits 0 only when all tests passed.
 #>
-param([string]$ConfigPath = (Join-Path $PSScriptRoot 'tests.config.json'))
+param(
+    [string]$ConfigPath = (Join-Path $PSScriptRoot 'tests.config.json'),
+    [switch]$NoPause
+)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Tests\TestCommon.ps1')
@@ -92,4 +96,12 @@ Write-LogLine -LogPath $logPath -Message "===== RUN END ====="
 
 $global:OverallResult = $overall
 $overall
+
+if (-not $NoPause) {
+    Write-Host "`nPress any key to continue . . ." -ForegroundColor Cyan -NoNewline
+    try { [void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') }
+    catch { [void](Read-Host) }   # hosts without raw key input (e.g. ISE): require Enter instead
+    Write-Host ''
+}
+
 if ($MyInvocation.InvocationName -ne '.' -and $overall -ne 'AllPassed') { exit 1 }

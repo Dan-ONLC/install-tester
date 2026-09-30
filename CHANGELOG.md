@@ -5,6 +5,10 @@ Follows [Semantic Versioning](https://semver.org): bump PATCH for fixes/tweaks t
 MINOR for new tests or features, MAJOR for breaking config/behavior changes. Update `VERSION`
 and add an entry here with every change.
 
+## [0.9.2] - 2026-09-30
+### Added
+- `Run-Tests.ps1` ends with "Press any key to continue" so the window stays open until a key is pressed; `-NoPause` skips it for unattended runs.
+
 ## [0.9.1] - 2026-09-30
 ### Added
 - Startup banner ("ONLC Machine Configuration Tester") with version; version logged at run start.
