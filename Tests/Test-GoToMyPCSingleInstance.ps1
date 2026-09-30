@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS  Test: exactly one GoToMyPC instance is running (zero or more than one fails).
-.PARAMETER ProcessName  Process to count, without .exe. Default g2host (the GoToMyPC host process).
+.PARAMETER ProcessName  Process to count, without .exe. Default g2tray (the GoToMyPC tray icon process; one per tray icon, so it also shows instances that are listening but not yet connected).
 .OUTPUTS   Result object; also sets $global:TestPassed.
 #>
-param([string]$ProcessName = 'g2host', [string]$LogPath)
+param([string]$ProcessName = 'g2tray', [string]$LogPath)
 . "$PSScriptRoot\TestCommon.ps1"
 $testName = 'Exactly one GoToMyPC instance running'
 
