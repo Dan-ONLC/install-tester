@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS  Test: GoToMyPC is running (at least one host process).
-.PARAMETER ProcessName  Process to look for, without .exe. Default g2host (the GoToMyPC host process).
+.PARAMETER ProcessName  Process to look for, without .exe. Default g2tray (the GoToMyPC tray icon process; one per tray icon, so it also shows instances that are listening but not yet connected).
 .OUTPUTS   Result object; also sets $global:TestPassed.
 #>
-param([string]$ProcessName = 'g2host', [string]$LogPath)
+param([string]$ProcessName = 'g2tray', [string]$LogPath)
 . "$PSScriptRoot\TestCommon.ps1"
 $testName = 'GoToMyPC running'
 
